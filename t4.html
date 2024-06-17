@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #FAFAD2;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: 2px solid #ccc;
+            transition: background-color 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #f1f1f1;
+        }
+
+        .x {
+            color: blue;
+            font-size: 48px;
+        }
+
+        .o {
+            color: red;
+            font-size: 48px;
+        }
+
+        .player1-move {
+            background-color: #cce5ff;
+        }
+
+        .player2-move, .ai-move {
+            background-color: #ffcccc;
+        }
+
+        .winning-message {
+            font-size: 24px;
+            color: #333;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+        <div>
+            <button id="playAgainstPerson">Play Against Person</button>
+            <button id="playAgainstAI">Play Against AI</button>
+        </div>
+        <div class="board hidden" id="board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+        <button id="restartButton" class="hidden">Restart</button>
+        <p id="winningMessage" class="winning-message hidden"></p>
+    </div>
+    <script>
+        const X_CLASS = 'x';
+        const O_CLASS = 'o';
+        const PLAYER1_MOVE_CLASS = 'player1-move';
+        const PLAYER2_MOVE_CLASS = 'player2-move';
+        const AI_MOVE_CLASS = 'ai-move';
+        const WINNING_COMBINATIONS = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        const cellElements = document.querySelectorAll('[data-cell]');
+        const board = document.getElementById('board');
+        const winningMessageTextElement = document.getElementById('winningMessage');
+        const restartButton = document.getElementById('restartButton');
+        const playAgainstPersonButton = document.getElementById('playAgainstPerson');
+        const playAgainstAIButton = document.getElementById('playAgainstAI');
+        let oTurn;
+        let againstAI = false;
+
+        playAgainstPersonButton.addEventListener('click', () => startGame(false));
+        playAgainstAIButton.addEventListener('click', () => startGame(true));
+        restartButton.addEventListener('click', () => startGame(againstAI));
+
+        function startGame(aiMode) {
+            againstAI = aiMode;
+            oTurn = false;
+            board.classList.remove('hidden');
+            restartButton.classList.remove('hidden');
+            winningMessageTextElement.classList.add('hidden');
+            cellElements.forEach(cell => {
+                cell.classList.remove(X_CLASS);
+                cell.classList.remove(O_CLASS);
+                cell.classList.remove(PLAYER1_MOVE_CLASS);
+                cell.classList.remove(PLAYER2_MOVE_CLASS);
+                cell.classList.remove(AI_MOVE_CLASS);
+                cell.removeEventListener('click', handleClick);
+                cell.addEventListener('click', handleClick, { once: true });
+            });
+            setBoardHoverClass();
+            winningMessageTextElement.innerText = '';
+        }
+
+        function handleClick(e) {
+            const cell = e.target;
+            const currentClass = oTurn ? O_CLASS : X_CLASS;
+            const moveClass = againstAI ? (oTurn ? AI_MOVE_CLASS : PLAYER1_MOVE_CLASS) : (oTurn ? PLAYER2_MOVE_CLASS : PLAYER1_MOVE_CLASS);
+            placeMark(cell, currentClass, moveClass);
+            if (checkWin(currentClass)) {
+                endGame(false);
+            } else if (isDraw()) {
+                endGame(true);
+            } else {
+                swapTurns();
+                setBoardHoverClass();
+                if (againstAI && oTurn) {
+                    makeAIMove();
+                }
+            }
+        }
+
+        function endGame(draw) {
+            if (draw) {
+                winningMessageTextElement.innerText = 'Draw!';
+            } else {
+                winningMessageTextElement.innerText = `${oTurn ? "O's" : "X's"} Wins!`;
+            }
+            winningMessageTextElement.classList.remove('hidden');
+        }
+
+        function isDraw() {
+            return [...cellElements].every(cell => {
+                return cell.classList.contains(X_CLASS) || cell.classList.contains(O_CLASS);
+            });
+        }
+
+        function placeMark(cell, currentClass, moveClass) {
+            cell.classList.add(currentClass);
+            cell.classList.add(moveClass);
+        }
+
+        function swapTurns() {
+            oTurn = !oTurn;
+        }
+
+        function setBoardHoverClass() {
+            board.classList.remove(X_CLASS);
+            board.classList.remove(O_CLASS);
+            if (oTurn) {
+                board.classList.add(O_CLASS);
+            } else {
+                board.classList.add(X_CLASS);
+            }
+        }
+
+        function checkWin(currentClass) {
+            return WINNING_COMBINATIONS.some(combination => {
+                return combination.every(index => {
+                    return cellElements[index].classList.contains(currentClass);
+                });
+            });
+        }
+
+        function makeAIMove() {
+            const availableCells = [...cellElements].filter(cell => {
+                return !cell.classList.contains(X_CLASS) && !cell.classList.contains(O_CLASS);
+            });
+            const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+            placeMark(randomCell, O_CLASS, AI_MOVE_CLASS);
+            if (checkWin(O_CLASS)) {
+                endGame(false);
+            } else if (isDraw()) {
+                endGame(true);
+            } else {
+                swapTurns();
+                setBoardHoverClass();
+            }
+        }
+    </script>
+</body>
+</html>
+
+
